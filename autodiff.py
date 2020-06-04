@@ -137,10 +137,13 @@ class MulOp(Op):
     def compute(self, node, input_vals):
         """Given values of two input nodes, return result of element-wise multiplication."""
         """TODO: Your code here"""
+        assert len(input_vals) == 2
+        return np.multiply(input_vals[0], input_vals[1])
 
     def gradient(self, node, output_grad):
         """Given gradient of multiply node, return gradient contributions to each input."""
         """TODO: Your code here"""
+        return [np.multiply(output_grad, ???)]
 
 class MulByConstOp(Op):
     """Op to element-wise multiply a nodes by a constant."""
@@ -154,10 +157,12 @@ class MulByConstOp(Op):
     def compute(self, node, input_vals):
         """Given values of input node, return result of element-wise multiplication."""
         """TODO: Your code here"""
+        return node.const_attr * input_vals
 
     def gradient(self, node, output_grad):
         """Given gradient of multiplication node, return gradient contribution to input."""
         """TODO: Your code here"""
+        return node.const_attr
 
 class MatMulOp(Op):
     """Op to matrix multiply two nodes."""
@@ -185,6 +190,9 @@ class MatMulOp(Op):
     def compute(self, node, input_vals):
         """Given values of input nodes, return result of matrix multiplication."""
         """TODO: Your code here"""
+        assert len(input_vals) == 2
+        return np.dot( (input_vals[0] if !node.matmul_attr_trans_A else input_vals[0].T),
+                       (input_vals[1] if !node.matmul_attr_trans_B else input_vals[1].T) )
 
     def gradient(self, node, output_grad):
         """Given gradient of multiply node, return gradient contributions to each input.
