@@ -328,6 +328,9 @@ def gradients(output_node, node_list):
     reverse_topo_order = reversed(find_topo_sort([output_node]))
 
     """TODO: Your code here"""
+    for ready_node in reverse_topo_order:
+        node_to_output_grad[ready_node] = ready_node.op.gradient(ready_node, 
+                                                                 node_to_output_grads_list[ready_node])
 
     # Collect results for gradients requested.
     grad_node_list = [node_to_output_grad[node] for node in node_list]
