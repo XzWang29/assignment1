@@ -170,7 +170,7 @@ class MulByConstOp(Op):
     def gradient(self, node, output_grad):
         """Given gradient of multiplication node, return gradient contribution to input."""
         """TODO: Your code here"""
-        return mul_byconst_op(output_grad, node.const_attr)
+        return [mul_byconst_op(output_grad, node.const_attr)]
 
 class MatMulOp(Op):
     """Op to matrix multiply two nodes."""
@@ -295,9 +295,12 @@ class Executor:
         # Traverse graph in topological sort order and compute values for all nodes.
         topo_order = find_topo_sort(self.eval_node_list)
         """TODO: Your code here"""
-        for ready_node in topo_order: 
-            in_vals_list = [node_to_val_map[x] for x in ready_node.inputs]
-            node_to_val_map[ready_node] = ready_node.compute(ready_node, in_vals_list)
+        for ready_node in topo_order:         
+            print(ready_node)    
+            if not isinstance(ready_node.op, PlaceholderOp):
+                in_vals_list = [node_to_val_map[x] for x in ready_node.inputs]
+                node_to_val_map[ready_node] = ready_node.op.compute(ready_node, in_vals_list)
+
         # Collect node values.
         node_val_results = [node_to_val_map[node] for node in self.eval_node_list]
         return node_val_results
@@ -326,13 +329,20 @@ def gradients(output_node, node_list):
     node_to_output_grad = {}
     # Traverse graph in reverse topological order given the output_node that we are taking gradient wrt.
     reverse_topo_order = reversed(find_topo_sort([output_node]))
-
-    """TODO: Your code here"""
+    # print('reverse_topo_order = !!!', list(reverse_topo_order))
     for ready_node in reverse_topo_order:
-        print(ready_node)
-        node_to_output_grad[ready_node] = ready_node.op.gradient(ready_node, 
-                                                                 node_to_output_grads_list[ready_node])
+        print('output_node = ', output_node, "\tready_node = ", ready_node)
+        grad = sum_node_list(node_to_output_grads_list[ready_node])
+        node_to_output_grad[ready_node] = grad
 
+        input_grad_contrib = ready_node.op.gradient(ready_node, grad)
+        cnt = 0
+        for in_node in ready_node.inputs:
+            node_to_output_grads_list[in_node] = node_to_output_grads_list.get(in_node, [])
+            node_to_output_grads_list[in_node].append(input_grad_contrib[cnt])
+            cnt += 1
+
+    print("node_to_output_grad = ", node_to_output_grad)
     # Collect results for gradients requested.
     grad_node_list = [node_to_output_grad[node] for node in node_list]
 
