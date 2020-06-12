@@ -31,6 +31,10 @@ class Node(object):
 
     def __mul__(self, other):
         """TODO: Your code here"""
+        if isinstance(other, Node):
+            new_node = mul_op(self, other)
+        else:
+            new_node = mul_byconst_op(self, other)
 
     # Allow left-hand-side add and multiply.
     __radd__ = __add__
@@ -143,7 +147,8 @@ class MulOp(Op):
     def gradient(self, node, output_grad):
         """Given gradient of multiply node, return gradient contributions to each input."""
         """TODO: Your code here"""
-        return [np.multiply(output_grad, ???)]
+        assert len(node.inputs) == 2
+        return [node.inputs[1], node.inputs[0]]
 
 class MulByConstOp(Op):
     """Op to element-wise multiply a nodes by a constant."""
