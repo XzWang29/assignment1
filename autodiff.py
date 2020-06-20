@@ -36,10 +36,7 @@ class Node(object):
             new_node = mul_op(self, other)
         else:
             new_node = mul_byconst_op(self, other)
-<<<<<<< HEAD
-=======
         return new_node
->>>>>>> 042f2dcf171922f86b41409643d317dcf9c12647
 
     # Allow left-hand-side add and multiply.
     __radd__ = __add__
@@ -169,7 +166,7 @@ class MulByConstOp(Op):
     def compute(self, node, input_vals):
         """Given values of input node, return result of element-wise multiplication."""
         """TODO: Your code here"""
-        return node.const_attr * input_vals
+        return np.multiply(node.const_attr, input_vals[0])
 
     def gradient(self, node, output_grad):
         """Given gradient of multiplication node, return gradient contribution to input."""
@@ -251,7 +248,14 @@ class ZerosLikeOp(Op):
 class OnesLikeOp(Op):
     """Op that represents a constant np.ones_like."""
     def __call__(self, node_A):
-        """Creates a node that represents a np.ones array of same shape as node_A."""
+        """Creates a node that represents a np.ones array of same shape as node_A.
+            
+        At here: 
+            1) node_A is only used to determine shape.
+            2) OnesLikeOp can be used for generating the start node for 
+               reverse-mode gradient computation. The first output of reverse mode
+               should be 1 (because y_bar at this node is 1)
+        """
         new_node = Op.__call__(self)
         new_node.inputs = [node_A]
         new_node.name = "Oneslike(%s)" % node_A.name
@@ -299,14 +303,16 @@ class Executor:
         # Traverse graph in topological sort order and compute values for all nodes.
         topo_order = find_topo_sort(self.eval_node_list)
         """TODO: Your code here"""
+        
         for ready_node in topo_order:         
-            print(ready_node)    
+            
             if not isinstance(ready_node.op, PlaceholderOp):
                 in_vals_list = [node_to_val_map[x] for x in ready_node.inputs]
                 node_to_val_map[ready_node] = ready_node.op.compute(ready_node, in_vals_list)
 
         # Collect node values.
         node_val_results = [node_to_val_map[node] for node in self.eval_node_list]
+        print('node_to_val_map = ', node_to_val_map)
         return node_val_results
 
 def gradients(output_node, node_list):
@@ -333,12 +339,11 @@ def gradients(output_node, node_list):
     node_to_output_grad = {}
     # Traverse graph in reverse topological order given the output_node that we are taking gradient wrt.
     reverse_topo_order = reversed(find_topo_sort([output_node]))
-    # print('reverse_topo_order = !!!', list(reverse_topo_order))
     for ready_node in reverse_topo_order:
-        print('output_node = ', output_node, "\tready_node = ", ready_node)
         grad = sum_node_list(node_to_output_grads_list[ready_node])
         node_to_output_grad[ready_node] = grad
 
+        # compute gradient contribution of each input node
         input_grad_contrib = ready_node.op.gradient(ready_node, grad)
         cnt = 0
         for in_node in ready_node.inputs:
@@ -346,11 +351,10 @@ def gradients(output_node, node_list):
             node_to_output_grads_list[in_node].append(input_grad_contrib[cnt])
             cnt += 1
 
-    print("node_to_output_grad = ", node_to_output_grad)
     # Collect results for gradients requested.
     grad_node_list = [node_to_output_grad[node] for node in node_list]
 
-    print(grad_node_list, node_to_output_grad, node_list)
+    print('node_to_output_grad = ', node_to_output_grad)
     return grad_node_list
 
 ##############################
